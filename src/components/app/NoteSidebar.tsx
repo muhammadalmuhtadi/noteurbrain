@@ -101,6 +101,68 @@ export function NoteSidebar({
       : false
   );
 
+  // ponytail: dynamic width states for columns (persisted in localStorage, SSR safe)
+  const [notebooksWidth, setNotebooksWidth] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("noturbrain_notebooks_width");
+      return saved ? parseInt(saved, 10) : 176;
+    }
+    return 176;
+  });
+  const [sectionsWidth, setSectionsWidth] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("noturbrain_sections_width");
+      return saved ? parseInt(saved, 10) : 176;
+    }
+    return 176;
+  });
+  const [pagesWidth, setPagesWidth] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("noturbrain_pages_width");
+      return saved ? parseInt(saved, 10) : 224;
+    }
+    return 224;
+  });
+
+  const handleResizeStart = (
+    e: React.MouseEvent,
+    column: "notebooks" | "sections" | "pages"
+  ) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth =
+      column === "notebooks"
+        ? notebooksWidth
+        : column === "sections"
+        ? sectionsWidth
+        : pagesWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const newWidth = Math.max(120, Math.min(500, startWidth + deltaX));
+      if (column === "notebooks") {
+        setNotebooksWidth(newWidth);
+        localStorage.setItem("noturbrain_notebooks_width", String(newWidth));
+      } else if (column === "sections") {
+        setSectionsWidth(newWidth);
+        localStorage.setItem("noturbrain_sections_width", String(newWidth));
+      } else {
+        setPagesWidth(newWidth);
+        localStorage.setItem("noturbrain_pages_width", String(newWidth));
+      }
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.classList.remove("select-none", "cursor-col-resize");
+    };
+
+    document.body.classList.add("select-none", "cursor-col-resize");
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
   const toggleNotebooks = () => {
     const next = !notebooksCollapsed;
     setNotebooksCollapsed(next);
@@ -239,6 +301,16 @@ export function NoteSidebar({
   const displayNotes = activeTag ? (tagNotes.data ?? []) : (notes.data ?? []);
   const empty = !notebooks.isLoading && (notebooks.data?.length ?? 0) === 0;
 
+  // ponytail: dynamic collapsed titles based on current selection
+  const activeNotebook = notebooks.data?.find((n) => n.id == notebookId);
+  const notebooksCollapsedTitle = activeNotebook ? activeNotebook.name : "Notebooks";
+
+  const activeSection = sections.data?.find((s) => s.id == sectionId);
+  const sectionsCollapsedTitle = activeSection ? activeSection.name : "Sections";
+
+  const activeNote = displayNotes.find((n) => n.id == selectedId);
+  const pagesCollapsedTitle = activeNote ? (activeNote.title || "Untitled") : (activeTag ? `#${activeTag}` : "Pages");
+
   return (
     <>
       {/* Mobile toggle */}
@@ -260,9 +332,11 @@ export function NoteSidebar({
           title="Notebooks"
           icon={<BookOpen className="size-3.5" />}
           onAdd={() => openModal("create-notebook")}
-          width="w-44"
+          width={notebooksWidth}
           collapsed={notebooksCollapsed}
           onToggleCollapse={toggleNotebooks}
+          onResizeStart={(e) => handleResizeStart(e, "notebooks")}
+          collapsedTitle={notebooksCollapsedTitle}
         >
           {empty ? (
             <div className="flex flex-col gap-2 p-3">
@@ -285,7 +359,7 @@ export function NoteSidebar({
               {notebooks.data?.map((nb) => (
                 <EditableItem
                   key={nb.id}
-                  active={nb.id === notebookId}
+                  active={nb.id == notebookId}
                   color={nb.color}
                   icon={<BookOpen className="size-3.5 shrink-0" />}
                   label={nb.name}
@@ -305,7 +379,7 @@ export function NoteSidebar({
                   onDelete={async () => {
                     if (!confirm(`Delete notebook "${nb.name}" and all its contents?`)) return;
                     await deleteNotebook.mutateAsync(nb.id);
-                    if (notebookId === nb.id) {
+                    if (notebookId == nb.id) {
                       onSelectNotebook(null);
                       onSelectSection(null);
                       onSelectNote(null);
@@ -322,9 +396,11 @@ export function NoteSidebar({
           title="Sections"
           icon={<Folder className="size-3.5" />}
           onAdd={notebookId ? () => openModal("create-section") : undefined}
-          width="w-44"
+          width={sectionsWidth}
           collapsed={sectionsCollapsed}
           onToggleCollapse={toggleSections}
+          onResizeStart={(e) => handleResizeStart(e, "sections")}
+          collapsedTitle={sectionsCollapsedTitle}
         >
           {!notebookId ? (
             <EmptyHint>Select a notebook</EmptyHint>
@@ -335,7 +411,7 @@ export function NoteSidebar({
               {sections.data?.map((sec) => (
                 <EditableItem
                   key={sec.id}
-                  active={sec.id === sectionId && !activeTag}
+                  active={sec.id == sectionId && !activeTag}
                   color={sec.color}
                   icon={<Folder className="size-3.5 shrink-0" />}
                   label={sec.name}
@@ -354,7 +430,7 @@ export function NoteSidebar({
                   onDelete={async () => {
                     if (!confirm(`Delete section "${sec.name}" and all its pages?`)) return;
                     await deleteSection.mutateAsync(sec.id);
-                    if (sectionId === sec.id) {
+                    if (sectionId == sec.id) {
                       onSelectSection(null);
                       onSelectNote(null);
                     }
@@ -373,10 +449,12 @@ export function NoteSidebar({
             const note = await createNote.mutateAsync({ sectionId, title: "Untitled" });
             onSelectNote(note.id);
           } : undefined}
-          width="w-56"
+          width={pagesWidth}
           last
           collapsed={pagesCollapsed}
           onToggleCollapse={togglePages}
+          onResizeStart={(e) => handleResizeStart(e, "pages")}
+          collapsedTitle={pagesCollapsedTitle}
           extra={
             !activeTag && sectionId ? (
               <div className="flex items-center gap-1">
@@ -433,8 +511,8 @@ export function NoteSidebar({
                   <button
                     onClick={() => onSelectNote(n.id)}
                     className={cn(
-                      "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-                      n.id === selectedId
+                      "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors cursor-pointer",
+                      n.id == selectedId
                         ? "bg-sidebar-accent text-sidebar-accent-foreground"
                         : "hover:bg-sidebar-accent/60",
                     )}
@@ -444,10 +522,14 @@ export function NoteSidebar({
                     <Trash2
                       onClick={async (e) => {
                         e.stopPropagation();
+                        if (!confirm(`Delete page "${n.title || "Untitled"}"?`)) return;
                         await deleteNote.mutateAsync(n.id);
-                        if (selectedId === n.id) onSelectNote(null);
+                        if (selectedId == n.id) onSelectNote(null);
                       }}
-                      className="size-3.5 opacity-0 group-hover:opacity-60 hover:opacity-100 hover:text-destructive"
+                      className={cn(
+                        "size-3.5 shrink-0 transition-opacity hover:opacity-100 hover:text-destructive cursor-pointer",
+                        n.id == selectedId ? "opacity-60" : "opacity-0 group-hover:opacity-60"
+                      )}
                     />
                   </button>
                 </li>
@@ -570,27 +652,33 @@ function Column({
   children,
   collapsed,
   onToggleCollapse,
+  onResizeStart,
+  collapsedTitle,
 }: {
   title: string;
   icon: React.ReactNode;
   onAdd?: () => void;
-  width: string;
+  width: number;
   last?: boolean;
   extra?: React.ReactNode;
   children: React.ReactNode;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  onResizeStart?: (e: React.MouseEvent) => void;
+  collapsedTitle?: string;
 }) {
+  const displayTitle = collapsed && collapsedTitle ? collapsedTitle : title;
+
   return (
     <div
+      style={{ width: collapsed ? 40 : width }}
       className={cn(
-        "flex flex-col transition-all duration-200 shrink-0",
-        collapsed ? "w-10 bg-sidebar/30" : width,
+        "flex flex-col transition-all duration-200 shrink-0 relative",
         !last && "border-r border-border",
       )}
     >
       {collapsed ? (
-        <div className="flex flex-col items-center gap-4 py-3 h-full select-none">
+        <div className="flex flex-col items-center gap-4 py-3 h-full select-none overflow-hidden">
           {onToggleCollapse && (
             <Button
               size="sm"
@@ -605,14 +693,15 @@ function Column({
           <span className="opacity-60 text-sidebar-foreground">{icon}</span>
           <div
             style={{ writingMode: "vertical-lr" }}
-            className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 rotate-180 my-2"
+            className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 rotate-180 my-2 max-h-[70%] truncate whitespace-nowrap"
+            title={displayTitle}
           >
-            {title}
+            {displayTitle}
           </div>
         </div>
       ) : (
         <>
-          <div className="flex h-9 items-center justify-between border-b border-border px-3">
+          <div className="flex h-9 items-center justify-between border-b border-border px-3 select-none">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               {icon}
               {title}
@@ -638,6 +727,15 @@ function Column({
             </div>
           </div>
           <ScrollArea className="flex-1">{children}</ScrollArea>
+
+          {/* Resize Handle */}
+          {onResizeStart && (
+            <div
+              onMouseDown={onResizeStart}
+              className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-primary/45 bg-transparent transition-colors z-30 select-none"
+              title="Drag to resize"
+            />
+          )}
         </>
       )}
     </div>
