@@ -11,14 +11,6 @@ NotUrBrain is a private, local-first **Second Brain** application designed to he
 - **Rich Editor with Live Previews**: Markdown editing powered by CodeMirror, featuring left-click backlinks navigation and hover previews of linked notes.
 - **Backlinks & Full-Text Search**: Instantly see which notes refer to the current page, and use lightning-fast search to find terms across all documents.
 
-## Tech Stack
-
-- **Framework**: TanStack Start + React
-- **Bundler & Build Tool**: Vite
-- **Styling**: Tailwind CSS + Vanilla CSS (LightningCSS transformer)
-- **Database**: SQLite (via SQLite WASM + OPFS)
-- **Graph Visualization**: force-graph
-
 ## Getting Started
 
 ### Prerequisites
