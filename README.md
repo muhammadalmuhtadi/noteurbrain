@@ -1,6 +1,6 @@
-# NotUrBrain 🧠
+# Noturbrain 🧠
 
-NotUrBrain is a private, local-first **Second Brain** application designed to help you organize thoughts, link pages, search notes, and visualize connections. All your notes are stored locally in an SQLite database that is synchronized in real-time with a file on your disk using the browser's File System Access API.
+Noturbrain is a private, local-first **Second Brain** application designed to help you organize thoughts, link pages, search notes, and visualize connections. All your notes are stored locally in an SQLite database that is synchronized in real-time with a file on your disk using the browser's File System Access API.
 
 ## Features
 
