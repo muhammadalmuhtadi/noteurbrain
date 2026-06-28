@@ -216,6 +216,11 @@ function convertTables(html: string): string {
 
 export const pasteExtension = EditorView.domEventHandlers({
   paste(event: ClipboardEvent, view: EditorView) {
+    // If the plain-text clipboard is just a URL, paste it raw —
+    // don't let htmlToMarkdown convert it to [Page Title](url).
+    const plain = event.clipboardData?.getData("text/plain")?.trim() ?? "";
+    if (/^https?:\/\/\S+$/.test(plain)) return false; // let CM handle as-is
+
     const html = event.clipboardData?.getData("text/html");
     if (!html?.trim()) return false; // No HTML: let CodeMirror handle plain text
 

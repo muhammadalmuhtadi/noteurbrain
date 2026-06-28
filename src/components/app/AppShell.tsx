@@ -13,6 +13,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getDb } from "@/db/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import noturbrainLogo from "@/assets/noturbrain.png";
+import noturbrainLogoWhite from "@/assets/noturbrain_white.png";
 import {
   clearLink,
   completeLink,
@@ -264,7 +266,11 @@ export function AppShell() {
     <div className="flex h-screen w-full flex-col bg-background text-foreground">
       {/* Header */}
       <header className="flex h-12 items-center gap-3 border-b border-border bg-card px-4">
-        <Brain className="size-4 text-primary" />
+        <img
+          src={dark ? noturbrainLogoWhite : noturbrainLogo}
+          alt="Noteurbrain Logo"
+          className="h-5 w-auto select-none"
+        />
 
         {/* View tabs */}
         <div className="ml-3 flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5">

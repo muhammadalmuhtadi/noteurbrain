@@ -17,6 +17,9 @@ export default defineConfig(async ({ command, mode }) => {
         },
       },
       server: { entry: "server" },
+      serverFns: {
+        disableCsrfMiddlewareWarning: true,
+      },
     }),
     react(),
   ];
@@ -24,7 +27,25 @@ export default defineConfig(async ({ command, mode }) => {
   if (command === "build") {
     try {
       const nitroMod = await import("nitro/vite");
-      plugins.push(nitroMod.nitro({ preset: "cloudflare-module" }));
+      // ponytail: desktop mode uses node-server so Electron can spawn it directly
+      const isDesktop = mode === "desktop";
+      plugins.push(
+        nitroMod.nitro(
+          isDesktop
+            ? {
+                preset: "node-server",
+                routeRules: {
+                  "/**": {
+                    headers: {
+                      "Cross-Origin-Opener-Policy": "same-origin",
+                      "Cross-Origin-Embedder-Policy": "require-corp",
+                    },
+                  },
+                },
+              }
+            : { preset: "cloudflare-module" }
+        )
+      );
     } catch (err) {
       console.warn("Failed to load nitro plugin:", err);
     }

@@ -160,7 +160,7 @@ ${contextBlock}`;
       {/* Chat panel */}
       {open && (
         <div className="fixed bottom-20 right-5 z-40 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col rounded-xl border border-border bg-card shadow-2xl"
-             style={{ height: "min(560px, calc(100vh - 6rem))" }}>
+          style={{ height: "min(560px, calc(100vh - 6rem))" }}>
           <div className="flex items-center gap-2 border-b border-border px-3 py-2">
             <Sparkles className="size-4 text-primary" />
             <span className="text-sm font-semibold flex-1">Ask AI</span>
@@ -306,9 +306,7 @@ function AiSettingsDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>AI Assistant Settings</DialogTitle>
-          <DialogDescription>
-            Use your own API key. The key is stored only in your browser (localStorage) and sent directly to your chosen provider.
-          </DialogDescription>
+
         </DialogHeader>
 
         <div className="space-y-3">

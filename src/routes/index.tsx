@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app/AppShell";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Second Brain — Local-first notes" },
+      { title: "Noteurbrain" },
       {
         name: "description",
         content:

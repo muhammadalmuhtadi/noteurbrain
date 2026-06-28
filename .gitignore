@@ -34,3 +34,8 @@ dist-ssr
 .agent/
 .agents/
 .skills/
+
+# Desktop builds and app wrapper
+desktop-app/
+desktop/
+dist-desktop/

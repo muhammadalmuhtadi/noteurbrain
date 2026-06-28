@@ -132,6 +132,7 @@ export function GraphView({ selectedId, onSelect }: Props) {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const container = wrapRef.current;
+    const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
 
     // Convert API nodes/edges to force-graph compatible format
     const nodes = filteredGraph.nodes.map((n) => ({
@@ -165,16 +166,24 @@ export function GraphView({ selectedId, onSelect }: Props) {
             .linkWidth((link: any) => (highlightedLinks.current.has(link) ? 2 : 1))
             .linkColor((link: any) =>
               highlightedLinks.current.has(link)
-                ? "rgba(96, 165, 250, 0.8)" // active blue link
-                : "rgba(148, 163, 184, 0.15)" // inactive link
+                ? isDark
+                  ? "rgba(255, 255, 255, 0.85)"
+                  : "rgba(96, 165, 250, 0.8)" // active blue link
+                : isDark
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "rgba(148, 163, 184, 0.15)" // inactive link
             )
             // directional arrows showing source → target
             .linkDirectionalArrowLength(6)
             .linkDirectionalArrowRelPos(1)
             .linkDirectionalArrowColor((link: any) =>
               highlightedLinks.current.has(link)
-                ? "rgba(96, 165, 250, 0.9)"
-                : "rgba(148, 163, 184, 0.3)"
+                ? isDark
+                  ? "rgba(255, 255, 255, 0.9)"
+                  : "rgba(96, 165, 250, 0.9)"
+                : isDark
+                  ? "rgba(255, 255, 255, 0.15)"
+                  : "rgba(148, 163, 184, 0.3)"
             )
             // directional particle flow
             .linkDirectionalParticles((link: any) => (highlightedLinks.current.has(link) ? 4 : 1))
@@ -222,25 +231,30 @@ export function GraphView({ selectedId, onSelect }: Props) {
                 const isHover = hoverNode.current && hoverNode.current.id === node.id;
                 const isHighlighted =
                   highlightedNodes.current.size > 0 ? highlightedNodes.current.has(node.id) : true;
-                const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
 
                 // Draw node circle
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
                 ctx.fillStyle = isSel
-                  ? "rgba(59, 130, 246, 1)" // blue
+                  ? isDark
+                    ? "rgba(255, 255, 255, 1)"
+                    : "rgba(59, 130, 246, 1)" // blue
                   : isHover
-                    ? "rgba(96, 165, 250, 0.9)"
+                    ? isDark
+                      ? "rgba(255, 255, 255, 0.85)"
+                      : "rgba(96, 165, 250, 0.9)"
                     : isHighlighted
                       ? isDark
                         ? "rgba(226, 232, 240, 0.8)"
                         : "rgba(71, 85, 105, 0.8)" // slate-200 / slate-600
-                      : "rgba(148, 163, 184, 0.15)";
+                      : isDark
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : "rgba(148, 163, 184, 0.15)";
                 ctx.fill();
 
                 // Stroke for selected / hover
                 if (isSel || isHover) {
-                  ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+                  ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.9)";
                   ctx.lineWidth = 1.5;
                   ctx.stroke();
                 }
@@ -252,9 +266,13 @@ export function GraphView({ selectedId, onSelect }: Props) {
                   ctx.textAlign = "center";
                   ctx.textBaseline = "middle";
                   ctx.fillStyle = isSel
-                    ? "#60a5fa"
+                    ? isDark
+                      ? "#ffffff"
+                      : "#60a5fa"
                     : isHover
-                      ? "#93c5fd"
+                      ? isDark
+                        ? "#e5e5e5"
+                        : "#93c5fd"
                       : isHighlighted
                         ? isDark
                           ? "rgba(241, 245, 249, 0.85)"

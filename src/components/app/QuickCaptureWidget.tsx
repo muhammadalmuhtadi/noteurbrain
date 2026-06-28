@@ -218,8 +218,7 @@ export function QuickCaptureWidget({ onSelectNote }: Props) {
               <Sparkles className="size-4 text-primary" /> Quick Capture
             </DialogTitle>
             <DialogDescription>
-              Paste anything. AI picks the right Notebook/Section/Page, rewrites it cleanly,
-              and you confirm before saving.
+              Paste anything. Ai picks the right Notebook/Section/Page, and you confirm before saving.
             </DialogDescription>
           </DialogHeader>
 

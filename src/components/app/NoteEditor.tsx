@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown } from "@codemirror/lang-markdown";
-import { EditorView } from "@codemirror/view";
+import { EditorView, ViewPlugin, Decoration, type DecorationSet, MatchDecorator, type ViewUpdate } from "@codemirror/view";
 import {
   autocompletion,
   type Completion,
@@ -85,6 +85,115 @@ function formatDate(ts: number): string {
     minute: "2-digit",
   });
 }
+
+// ── URL highlight via MatchDecorator (blue + underlined, Wikipedia-style) ──
+// MatchDecorator scans the document for URL patterns and applies a CSS class.
+// This works for BOTH plain URLs and URLs inside markdown link syntax.
+const urlDecoration = Decoration.mark({ class: "cm-url-link" });
+
+const urlMatcher = new MatchDecorator({
+  regexp: /https?:\/\/[^\s)\],]+/g,
+  decoration: () => urlDecoration,
+});
+
+const urlHighlightPlugin = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+    constructor(view: EditorView) {
+      this.decorations = urlMatcher.createDeco(view);
+    }
+    update(update: ViewUpdate) {
+      this.decorations = urlMatcher.updateDeco(update, this.decorations);
+    }
+  },
+  { decorations: (v) => v.decorations },
+);
+
+// ── Link Click Handler Extension ───────────────────────────────────────────
+// Track mousedown position so we can distinguish a clean click from a drag-select.
+let _linkMousedownX = 0;
+let _linkMousedownY = 0;
+
+/**
+ * Returns the set of character ranges that belong to markdown link URLs,
+ * i.e. the `(https://…)` portion of `[label](url)`. Clicks inside these
+ * ranges should NOT trigger navigation — only clicks on the [label] should.
+ */
+function getMdLinkUrlRanges(lineText: string): Array<{ from: number; to: number }> {
+  const ranges: Array<{ from: number; to: number }> = [];
+  const re = /\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+  let m;
+  while ((m = re.exec(lineText)) !== null) {
+    // The `(url)` part starts at the `]` + 1 position = after the label bracket
+    const urlPartStart = m.index + m[1].length + 2; // skip `[label](`
+    const urlPartEnd = re.lastIndex; // includes `)` 
+    ranges.push({ from: urlPartStart, to: urlPartEnd });
+  }
+  return ranges;
+}
+
+const linkClickExtension = EditorView.domEventHandlers({
+  mousedown(event) {
+    _linkMousedownX = event.clientX;
+    _linkMousedownY = event.clientY;
+    return false;
+  },
+  click(event, view) {
+    if (event.button !== 0) return false;
+
+    // If the mouse moved more than 4px since mousedown, the user was selecting
+    // text — do NOT open the link.
+    const dx = Math.abs(event.clientX - _linkMousedownX);
+    const dy = Math.abs(event.clientY - _linkMousedownY);
+    if (dx > 4 || dy > 4) return false;
+
+    // Also skip if the browser already has a non-collapsed selection (text highlighted).
+    const sel = window.getSelection();
+    if (sel && sel.toString().length > 0) return false;
+
+    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+    if (pos === null) return false;
+
+    const line = view.state.doc.lineAt(pos);
+    const lineText = line.text;
+    const relativePos = pos - line.from;
+
+    // Pre-compute which ranges are the raw-URL portion of markdown links.
+    // Clicks inside (url) should NOT navigate.
+    const urlRanges = getMdLinkUrlRanges(lineText);
+    const insideUrlPart = urlRanges.some(
+      (r) => relativePos >= r.from && relativePos < r.to,
+    );
+    if (insideUrlPart) return false;
+
+    // 1. Check markdown links: navigate only when clicking on the [label] part
+    const mdLinkRegex = /\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+    let match;
+    while ((match = mdLinkRegex.exec(lineText)) !== null) {
+      const labelStart = match.index;              // start of `[`
+      const labelEnd = match.index + match[1].length + 1; // end of `]` (inclusive)
+      if (relativePos >= labelStart && relativePos <= labelEnd) {
+        const url = match[2];
+        window.open(url, "_blank", "noopener,noreferrer");
+        return true;
+      }
+    }
+
+    // 2. Check plain URLs (NOT inside a markdown link construct)
+    const plainUrlRegex = /(https?:\/\/[^\s)\],]+)/g;
+    while ((match = plainUrlRegex.exec(lineText)) !== null) {
+      const start = match.index;
+      const end = plainUrlRegex.lastIndex;
+      if (relativePos >= start && relativePos < end) {
+        const url = match[1];
+        window.open(url, "_blank", "noopener,noreferrer");
+        return true;
+      }
+    }
+
+    return false;
+  },
+});
 
 // ── Peek preview portal ────────────────────────────────────────────────────
 
@@ -285,12 +394,14 @@ export function NoteEditor({ noteId, onSelectNote, dark = false }: Props) {
     () => [
       markdown(),
       EditorView.lineWrapping,
+      urlHighlightPlugin,
       buildMentionAutocomplete(noteId),
       mentionLinkExtension(mentionMap, handleSelectNote, handleHoverChange),
+      linkClickExtension,
       ...formattingExtensions(),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [noteId, mentionMap],
+    [noteId, mentionMap, dark],
   );
 
   useEffect(() => {
