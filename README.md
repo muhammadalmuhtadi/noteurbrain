@@ -1,6 +1,6 @@
-# Noturbrain 🧠
+# Noteurbrain 🧠
 
-Noturbrain is a private, local-first **Second Brain** application designed to help you organize thoughts, link pages, search notes, and visualize connections. All your notes are stored locally in an SQLite database that is synchronized in real-time with a file on your disk using the browser's File System Access API.
+Noteurbrain is a private, local-first **Second Brain** application designed to help you organize thoughts, link pages, search notes, and visualize connections. All your notes are stored locally in an SQLite database that is synchronized in real-time with a file on your disk using the browser's File System Access API.
 
 ## Features
 
@@ -21,8 +21,8 @@ Make sure you have Node.js installed (version 18 or higher recommended).
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/muhammadalmuhtadi/noturbrain.git
-   cd noturbrain
+   git clone https://github.com/muhammadalmuhtadi/noteurbrain.git
+   cd noteurbrain
    ```
 
 2. Install dependencies:
