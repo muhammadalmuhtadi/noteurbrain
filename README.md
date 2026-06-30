@@ -44,3 +44,9 @@ To build the static application bundle:
 npm run build
 ```
 The optimized bundle will be generated in the `.output/public` folder.
+
+
+### Build for Production
+
+The testing deployment apps at: noteurbrain.netlify.app
+
