@@ -278,12 +278,6 @@ function AiSettingsDialog({
     }
   }, [open, current]);
 
-  useEffect(() => {
-    // reset model when provider changes if invalid
-    const allowed = PROVIDER_MODELS[provider].models;
-    if (!allowed.includes(model)) setModel(PROVIDER_MODELS[provider].defaultModel);
-  }, [provider, model]);
-
   const handleSave = () => {
     if (!apiKey.trim()) {
       toast.error("API key required");
@@ -312,7 +306,14 @@ function AiSettingsDialog({
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>Provider</Label>
-            <Select value={provider} onValueChange={(v) => setProvider(v as AiProvider)}>
+            <Select
+              value={provider}
+              onValueChange={(v) => {
+                const nextProvider = v as AiProvider;
+                setProvider(nextProvider);
+                setModel(PROVIDER_MODELS[nextProvider].defaultModel);
+              }}
+            >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {(Object.keys(PROVIDER_MODELS) as AiProvider[]).map((p) => (
@@ -324,14 +325,18 @@ function AiSettingsDialog({
 
           <div className="space-y-1.5">
             <Label>Model</Label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PROVIDER_MODELS[provider].models.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder={`e.g. ${PROVIDER_MODELS[provider].defaultModel}`}
+              list="model-suggestions"
+              autoComplete="off"
+            />
+            <datalist id="model-suggestions">
+              {PROVIDER_MODELS[provider].models.map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
           </div>
 
           <div className="space-y-1.5">
