@@ -33,18 +33,18 @@ export default defineConfig(async ({ command, mode }) => {
         nitroMod.nitro(
           isDesktop
             ? {
-                preset: "node-server",
-                routeRules: {
-                  "/**": {
-                    headers: {
-                      "Cross-Origin-Opener-Policy": "same-origin",
-                      "Cross-Origin-Embedder-Policy": "require-corp",
-                    },
+              preset: "node-server",
+              routeRules: {
+                "/**": {
+                  headers: {
+                    "Cross-Origin-Opener-Policy": "same-origin",
+                    "Cross-Origin-Embedder-Policy": "require-corp",
                   },
                 },
-              }
-            : { preset: "cloudflare-module" }
-        )
+              },
+            }
+            : { preset: "netlify" },
+        ),
       );
     } catch (err) {
       console.warn("Failed to load nitro plugin:", err);
@@ -78,7 +78,13 @@ export default defineConfig(async ({ command, mode }) => {
     },
     optimizeDeps: {
       exclude: ["@sqlite.org/sqlite-wasm"],
-      include: ["react", "react-dom", "react-dom/client", "react/jsx-runtime", "react/jsx-dev-runtime"],
+      include: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+      ],
       ignoreOutdatedRequests: true,
     },
     server: {
